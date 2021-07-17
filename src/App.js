@@ -127,16 +127,64 @@ function CategoryProductsPage() {
   )
 }
 
+function LoginPage() {
+  return (
+    <h1>Login Page</h1>
+  )
+}
+function SignUpPage() {
+  const [username, setUsername] = useState("")
+  const [password, setPassword] = useState("")
+
+  const handleSubmit = e => {
+    e.preventDefault()
+    console.log(JSON.stringify({username, password}))
+    fetch("http://localhost:5000/users/sign_up", {
+      method: "POST",
+      credentials: 'include',
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({username, password})
+    })
+    // .then(() => setAuthenticated(true))
+    .catch(err => console.log(err))
+  }
+  
+  return (
+    <>
+      <h1>Sign Up Page</h1>
+      <form onSubmit={handleSubmit}>
+        <div>
+          <label>username</label>
+          <input value={username} onChange={e => setUsername(e.target.value)}/>
+        </div>
+        <div>
+          <label>password</label>
+          <input value={password} onChange={e => setPassword(e.target.value)}/>
+        </div>
+        <div>
+          <button>Submit</button>
+        </div>
+      </form>
+    </>
+  )
+}
+
 function App() {
   return (
     <Router>
       <Link to="/products">All Products</Link>
       <Link to="/products/new">Create Product</Link>
       <Link to="/categories">All Categories</Link>
+      <Link to='/login'>Login</Link>
+      <Link to='/sign_up'>Sign Up</Link>
       <Route exact path="/products" component={ProductsIndexPage}/>
       <Route exact path="/products/new" component={ProductsCreatePage}/>
       <Route exact path="/categories" component={CategoriesIndexPage}/>
       <Route exact path="/categories/:id/products" component={CategoryProductsPage}/>
+      <Route exact path="/login" component={LoginPage} />
+      <Route exact path="/sign_up" component={SignUpPage} />
     </Router>
   );
 }
