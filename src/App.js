@@ -2,10 +2,9 @@ import React, { useEffect, useState } from 'react';
 import {BrowserRouter as Router, Route, Link} from 'react-router-dom'
 
 function ProductsCreatePage() {
-  // const [form, setForm] = useState({name:"", description:"", price:"", category: ""})
-  const [data, setData] = useState()
-
+  const [form, setForm] = useState({name:"", description:"", quantity:"", category: ""})
   const [categories, setCategories] = useState([])
+  const [image, setImage] = useState("")
 
   useEffect(() => {
     fetch("http://localhost:5000/categories")
@@ -13,21 +12,30 @@ function ProductsCreatePage() {
       .then(data => setCategories(data))
   }, [])
 
-  const handleSubmit = () => {
+  const handleSubmit = e => {
+    e.preventDefault()
+    let formData = new FormData()
+    formData.append("name", form.name)
+    formData.append("description", form.description)
+    formData.append("quantity", form.quantity)
+    formData.append("category", form.category)
+    formData.append("image", image)
+    
     fetch("http://localhost:5000/products", {
       method: "POST",
-      body: JSON.stringify(form)
+      body: formData
     })
     .then(response => response.json())
-    .then(() => window.location = "/foo")
+    .then(() => {})
+  }
+
+  const handleChange = e => {
+    // console.log(e.target.files[0])
+    setImage(e.target.files[0])
   }
 
   return (
     <form onSubmit={handleSubmit}>
-    <div>
-      <label>Nam  e</label>
-      <input onChange={e => setForm({...form, name: e.target.value})} value={form.name} />
-    </div>
       <div>
         <label>Name</label>
         <input onChange={e => setForm({...form, name: e.target.value})} value={form.name} />
@@ -42,12 +50,26 @@ function ProductsCreatePage() {
       </div>
       <div>
         <label>Categories</label>
-        <select>
-          <option>1</option>
-          <option>2</option>
-          <option>3</option>
+        <select
+          value={form.category._id} 
+          onChange={e => setForm({...form, category: e.target.value})}
+          >
+          {categories.map(category => (
+            <option 
+            key={category._id} 
+            value={category._id}>{category.name}</option>
+          ))}
         </select>
       </div>
+      <div>
+          <label>Image Upload:</label>
+          <input 
+            type="file"
+            name="image"
+            onChange={handleChange}
+          />
+        </div>
+      <button>Submit</button>
     </form>
   )
 }
@@ -64,9 +86,11 @@ function ProductsIndexPage() {
     <>
       {products.map(product => (
         <div>
+          {console.log(product)}
           <h2>{product.name}</h2>
-          <h5>{product.category.name}</h5>
+          <h5>{product.category && product.category.name}</h5>
           <p>{product.description}</p>
+          <img src={product.imageUrl} />
           <p>Only {product.quantity} left</p>
         </div>
       ))}
@@ -109,10 +133,10 @@ function App() {
       <Link to="/products">All Products</Link>
       <Link to="/products/new">Create Product</Link>
       <Link to="/categories">All Categories</Link>
-      <Route exact path="/products" render={ProductsIndexPage}/>
-      <Route exact path="/products/new" render={ProductsCreatePage}/>
-      <Route exact path="/categories" render={CategoriesIndexPage}/>
-      <Route exact path="/categories/:id/products" render={CategoryProductsPage}/>
+      <Route exact path="/products" component={ProductsIndexPage}/>
+      <Route exact path="/products/new" component={ProductsCreatePage}/>
+      <Route exact path="/categories" component={CategoriesIndexPage}/>
+      <Route exact path="/categories/:id/products" component={CategoryProductsPage}/>
     </Router>
   );
 }
