@@ -127,18 +127,57 @@ function CategoryProductsPage() {
   )
 }
 
-function LoginPage() {
-  return (
-    <h1>Login Page</h1>
-  )
-}
-function SignUpPage() {
+function LoginPage({setAuthenticated, setUser}) {
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
 
   const handleSubmit = e => {
     e.preventDefault()
-    console.log(JSON.stringify({username, password}))
+    fetch("http://localhost:5000/users/login", {
+      method: "POST",
+      credentials: 'include',
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({username, password})
+    })
+    .then(result => {
+      if (result.status == 200) {
+        setAuthenticated(true)
+        return result.json()
+      }})
+      .then(user => {
+        setUser(user)
+      }) 
+    .catch(err => console.log(err))
+  }
+  
+  return (
+    <>
+      <h1>Log In Page</h1>
+      <form onSubmit={handleSubmit}>
+        <div>
+          <label>username</label>
+          <input value={username} onChange={e => setUsername(e.target.value)}/>
+        </div>
+        <div>
+          <label>password</label>
+          <input value={password} onChange={e => setPassword(e.target.value)}/>
+        </div>
+        <div>
+          <button>Submit</button>
+        </div>
+      </form>
+    </>
+  )
+}
+
+function SignUpPage({setAuthenticated, setUser}) {
+  const [username, setUsername] = useState("")
+  const [password, setPassword] = useState("")
+
+  const handleSubmit = e => {
+    e.preventDefault()
     fetch("http://localhost:5000/users/sign_up", {
       method: "POST",
       credentials: 'include',
@@ -147,7 +186,7 @@ function SignUpPage() {
       },
       body: JSON.stringify({username, password})
     })
-    // .then(() => setAuthenticated(true))
+    .then(result => setAuthenticated(true))
     .catch(err => console.log(err))
   }
   
@@ -172,19 +211,53 @@ function SignUpPage() {
 }
 
 function App() {
+  const [authenticated, setAuthenticated] = useState(false)
+  const [user, setUser] = useState(null)
+
+  useEffect(() => {
+    fetch("http://localhost:5000/users/me", {
+      credentials: "include"
+    })
+    .then(data => data.json())
+    .then(user => {
+      setAuthenticated(true)
+      setUser(user)
+    })
+    .catch(err => console.log(err))
+  }, [])
+
+  const handleLogout = () => {
+    fetch("http://localhost:5000/users/logout", {
+      credentials: "include"
+    })
+    .then(() => {
+      setAuthenticated(false)
+      setUser(null)
+    })
+    .catch(err => console.log(err))
+  }
+  
   return (
     <Router>
+      <h1>You are {authenticated ? "authenticated" : "not authenticated"}</h1>
+      {user && <h2>You are {user.username}</h2>}
       <Link to="/products">All Products</Link>
       <Link to="/products/new">Create Product</Link>
       <Link to="/categories">All Categories</Link>
-      <Link to='/login'>Login</Link>
-      <Link to='/sign_up'>Sign Up</Link>
+      {authenticated ? (
+        <button onClick={handleLogout}>Logout</button>
+      ) : (
+        <>
+          <Link to='/login'>Login</Link>
+          <Link to='/sign_up'>Sign Up</Link>
+        </>
+      )}
       <Route exact path="/products" component={ProductsIndexPage}/>
       <Route exact path="/products/new" component={ProductsCreatePage}/>
       <Route exact path="/categories" component={CategoriesIndexPage}/>
       <Route exact path="/categories/:id/products" component={CategoryProductsPage}/>
-      <Route exact path="/login" component={LoginPage} />
-      <Route exact path="/sign_up" component={SignUpPage} />
+      <Route exact path="/login" render={() => <LoginPage setAuthenticated={setAuthenticated} setUser={setUser} />} />
+      <Route exact path="/sign_up" render={() => <SignUpPage setAuthenticated={setAuthenticated} setUser={setUser} />} />
     </Router>
   );
 }
